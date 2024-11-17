@@ -27,7 +27,7 @@ export async function userFindMany() {
 
 export async function userFindUnique(id: string) {
   try {
-    return data.user.findUnique({ where: { id } })
+    return data.user.findUnique({ where: { id } }).then((res) => ({ ...res, password: undefined }))
   } catch (e) {
     throw new InternalServerError(`Error fetching user: ${e}`)
   }

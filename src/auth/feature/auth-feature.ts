@@ -1,20 +1,15 @@
 import { loginBodySchema, registerSchema } from '@api/auth/data-access'
-import { ACCESS_TOKEN_EXP, data, getExpTimestamp, JWT_NAME, REFRESH_TOKEN_EXP } from '@api/core/data-access'
-import jwt from '@elysiajs/jwt'
+import { ACCESS_TOKEN_EXP, appJwt, data, REFRESH_TOKEN_EXP } from '@api/core/data-access'
+import { userFindUnique } from '@api/user/data-access'
 import { Elysia } from 'elysia'
-import { authPlugin } from '../data-access/auth-plugin'
+import { authPlugin, createAccessRefreshToken } from '../data-access/auth-plugin'
 
 export const authFeature = new Elysia({ prefix: '/auth', tags: ['auth'] })
-  .use(
-    jwt({
-      name: JWT_NAME,
-
-      secret: Bun.env.JWT_SECRET!,
-    }),
-  )
+  .use(appJwt)
   .post(
     '/login',
     async ({ body, jwt, cookie, set }) => {
+      type jwtType = typeof jwt
       // match user username
       const user = await data.user.findUnique({
         where: { username: body.username },
@@ -27,43 +22,21 @@ export const authFeature = new Elysia({ prefix: '/auth', tags: ['auth'] })
 
       if (!user) {
         set.status = 'Bad Request'
-        throw new Error('The username address or password you entered is incorrect')
+        throw new Error('The username or password you entered is incorrect')
       }
 
       // match password
       const matchPassword = await Bun.password.verify(body.password, user.password ?? '', 'bcrypt')
       if (!matchPassword) {
         set.status = 'Bad Request'
-        throw new Error('The username address or password you entered is incorrect')
+        throw new Error('The username or password you entered is incorrect')
       }
 
-      // create access token
-      const accessToken = await jwt.sign({
-        sub: user.id,
-        exp: getExpTimestamp(ACCESS_TOKEN_EXP),
-      })
-      cookie.accessToken.set({
-        value: accessToken,
-        httpOnly: true,
-        maxAge: ACCESS_TOKEN_EXP,
-        path: '/',
-      })
-      // create refresh token
-      const refreshToken = await jwt.sign({
-        sub: user.id,
-        exp: getExpTimestamp(REFRESH_TOKEN_EXP),
-      })
-      cookie.refreshToken.set({
-        value: refreshToken,
-        httpOnly: true,
-        maxAge: REFRESH_TOKEN_EXP,
-        path: '/',
-      })
+      const [accessToken, refreshToken] = await createAccessRefreshToken({ jwt, sub: user.id })
+      cookie.accessToken.set({ httpOnly: true, maxAge: ACCESS_TOKEN_EXP, path: '/', value: accessToken })
+      cookie.refreshToken.set({ httpOnly: true, maxAge: REFRESH_TOKEN_EXP, path: '/', value: refreshToken })
 
-      return {
-        accessToken,
-        refreshToken,
-      }
+      return userFindUnique(user.id)
     },
     {
       body: loginBodySchema,
@@ -120,39 +93,15 @@ export const authFeature = new Elysia({ prefix: '/auth', tags: ['auth'] })
       set.status = 'Forbidden'
       throw new Error('Refresh token is invalid')
     }
-    // create new access token
-    const accessToken = await jwt.sign({
-      sub: user.id,
-      exp: getExpTimestamp(ACCESS_TOKEN_EXP),
-    })
-    // create new refresh token
-    const refreshToken = await jwt.sign({
-      sub: user.id,
-      exp: getExpTimestamp(REFRESH_TOKEN_EXP),
-    })
 
-    cookie.accessToken.set({
-      value: accessToken,
-      httpOnly: true,
-      maxAge: ACCESS_TOKEN_EXP,
-      path: '/',
-    })
+    const [accessToken, refreshToken] = await createAccessRefreshToken({ jwt, sub: user.id })
+    cookie.accessToken.set({ httpOnly: true, maxAge: ACCESS_TOKEN_EXP, path: '/', value: accessToken })
+    cookie.refreshToken.set({ httpOnly: true, maxAge: REFRESH_TOKEN_EXP, path: '/', value: refreshToken })
 
-    cookie.refreshToken.set({
-      value: refreshToken,
-      httpOnly: true,
-      maxAge: REFRESH_TOKEN_EXP,
-      path: '/',
-    })
-
-    console.log('Creating new tokens', {
-      accessToken,
-      refreshToken,
-    })
-    return { accessToken, refreshToken }
+    return true
   })
   .use(authPlugin)
-  .post('/logout', async ({ cookie: { accessToken, refreshToken }, user }) => {
+  .post('/logout', async ({ cookie: { accessToken, refreshToken } }) => {
     // remove refresh token and access token from cookies
     accessToken.remove()
     refreshToken.remove()
