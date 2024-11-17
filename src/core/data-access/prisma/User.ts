@@ -5,10 +5,13 @@ import { __nullable__ } from "./__nullable__";
 export const UserPlain = t.Object(
   {
     id: t.String({ additionalProperties: false }),
+    createdAt: t.Date({ additionalProperties: false }),
+    updatedAt: t.Date({ additionalProperties: false }),
     username: t.String({ additionalProperties: false }),
+    admin: t.Boolean({ additionalProperties: false }),
+    avatarUrl: __nullable__(t.String({ additionalProperties: false })),
     name: __nullable__(t.String({ additionalProperties: false })),
     password: __nullable__(t.String({ additionalProperties: false })),
-    avatarUrl: __nullable__(t.String({ additionalProperties: false })),
   },
   { additionalProperties: false },
 );
@@ -18,11 +21,12 @@ export const UserRelations = t.Object({}, { additionalProperties: false });
 export const UserPlainInputCreate = t.Object(
   {
     username: t.String({ additionalProperties: false }),
-    name: t.Optional(__nullable__(t.String({ additionalProperties: false }))),
-    password: t.Optional(
+    admin: t.Optional(t.Boolean({ additionalProperties: false })),
+    avatarUrl: t.Optional(
       __nullable__(t.String({ additionalProperties: false })),
     ),
-    avatarUrl: t.Optional(
+    name: t.Optional(__nullable__(t.String({ additionalProperties: false }))),
+    password: t.Optional(
       __nullable__(t.String({ additionalProperties: false })),
     ),
   },
@@ -32,9 +36,10 @@ export const UserPlainInputCreate = t.Object(
 export const UserPlainInputUpdate = t.Object(
   {
     username: t.String({ additionalProperties: false }),
+    admin: t.Optional(t.Boolean({ additionalProperties: false })),
+    avatarUrl: __nullable__(t.String({ additionalProperties: false })),
     name: __nullable__(t.String({ additionalProperties: false })),
     password: __nullable__(t.String({ additionalProperties: false })),
-    avatarUrl: __nullable__(t.String({ additionalProperties: false })),
   },
   { additionalProperties: false },
 );
@@ -57,10 +62,13 @@ export const UserWhere = t.Partial(
         NOT: t.Union([Self, t.Array(Self)]),
         OR: t.Array(Self),
         id: t.String(),
+        createdAt: t.Date(),
+        updatedAt: t.Date(),
         username: t.String(),
+        admin: t.Boolean(),
+        avatarUrl: t.String(),
         name: t.String(),
         password: t.String(),
-        avatarUrl: t.String(),
       }),
     { $id: "User" },
   ),
@@ -86,10 +94,13 @@ export const UserWhereUnique = t.Recursive(
         t.Object(
           {
             id: t.String(),
+            createdAt: t.Date(),
+            updatedAt: t.Date(),
             username: t.String(),
+            admin: t.Boolean(),
+            avatarUrl: t.String(),
             name: t.String(),
             password: t.String(),
-            avatarUrl: t.String(),
           },
           { additionalProperties: false },
         ),
@@ -103,10 +114,13 @@ export const UserSelect = t.Partial(
   t.Object(
     {
       id: t.Boolean(),
+      createdAt: t.Boolean(),
+      updatedAt: t.Boolean(),
       username: t.Boolean(),
+      admin: t.Boolean(),
+      avatarUrl: t.Boolean(),
       name: t.Boolean(),
       password: t.Boolean(),
-      avatarUrl: t.Boolean(),
       _count: t.Boolean(),
     },
     { additionalProperties: false },
@@ -123,10 +137,13 @@ export const UserOrderBy = t.Partial(
   t.Object(
     {
       id: t.Union([t.Literal("asc"), t.Literal("desc")]),
+      createdAt: t.Union([t.Literal("asc"), t.Literal("desc")]),
+      updatedAt: t.Union([t.Literal("asc"), t.Literal("desc")]),
       username: t.Union([t.Literal("asc"), t.Literal("desc")]),
+      admin: t.Union([t.Literal("asc"), t.Literal("desc")]),
+      avatarUrl: t.Union([t.Literal("asc"), t.Literal("desc")]),
       name: t.Union([t.Literal("asc"), t.Literal("desc")]),
       password: t.Union([t.Literal("asc"), t.Literal("desc")]),
-      avatarUrl: t.Union([t.Literal("asc"), t.Literal("desc")]),
     },
     { additionalProperties: false },
   ),

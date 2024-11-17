@@ -5,6 +5,8 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
+      "@api/auth/data-access": ["src/auth/data-access/index.ts"],
+      "@api/auth/feature": ["src/auth/feature/index.ts"],
       "@api/core/data-access": ["src/core/data-access/index.ts"],
       "@api/core/feature": ["src/core/feature/index.ts"],
       "@api/user/data-access": ["src/user/data-access/index.ts"],

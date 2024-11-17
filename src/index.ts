@@ -1,3 +1,4 @@
+import { authFeature } from '@api/auth/feature'
 import { coreFeature } from '@api/core/feature'
 import { userFeature } from '@api/user/feature'
 import swagger from '@elysiajs/swagger'
@@ -11,6 +12,7 @@ const app = new Elysia()
   .group('/api', (app) =>
     app
       // Add features here
+      .use(authFeature)
       .use(coreFeature)
       .use(userFeature),
   )

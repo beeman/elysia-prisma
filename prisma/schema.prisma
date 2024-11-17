@@ -16,9 +16,12 @@ datasource db {
 }
 
 model User {
-  id        String  @id @default(cuid())
-  username  String  @unique
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  username  String   @unique
+  admin     Boolean  @default(false)
+  avatarUrl String?
   name      String?
   password  String?
-  avatarUrl String?
 }
