@@ -9,7 +9,6 @@ export const authFeature = new Elysia({ prefix: '/auth', tags: ['auth'] })
   .post(
     '/login',
     async ({ body, jwt, cookie, set }) => {
-      type jwtType = typeof jwt
       // match user username
       const user = await data.user.findUnique({
         where: { username: body.username },

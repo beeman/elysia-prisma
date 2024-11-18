@@ -5,7 +5,7 @@ import swagger from '@elysiajs/swagger'
 import { Elysia } from 'elysia'
 import * as process from 'node:process'
 
-const app = new Elysia()
+export const app = new Elysia()
   // Plugins
   .use(swagger({ provider: 'swagger-ui' }))
   // Routes
