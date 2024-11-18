@@ -30,7 +30,7 @@ describe('auth', () => {
       expect(response.data?.admin).toBeFalse()
       expect(response.data?.avatarUrl).toBeNull()
       expect(response.data?.name).toBeNull()
-      expect(response.data?.password).toBeNull()
+      expect(response.data?.password).toBeUndefined()
     })
 
     it('should successfully login with valid credentials', async () => {
@@ -38,6 +38,7 @@ describe('auth', () => {
         username,
         password,
       })
+
       expect(response.status).toBe(200)
       cookie = (response.headers as Headers).getSetCookie().join(';')
 
@@ -67,8 +68,6 @@ describe('auth', () => {
         headers: { cookie },
       })
       expect(response.status).toBe(200)
-      // expect(response.cookies).toHaveProperty('accessToken')
-      // expect(response.cookies).toHaveProperty('refreshToken')
     })
 
     it('should logout successfully and clear cookies', async () => {
@@ -80,8 +79,6 @@ describe('auth', () => {
         headers: { cookie },
       })
       expect(response.status).toBe(200)
-      // expect(response.cookies.accessToken).toBeUndefined()
-      // expect(response.cookies.refreshToken).toBeUndefined()
     })
   })
 

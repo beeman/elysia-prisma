@@ -2,15 +2,19 @@ import { Prisma, PrismaClient } from '@prisma/client'
 
 export const prisma = new PrismaClient()
 
+const password = 'password'
 const users: Prisma.UserCreateInput[] = [
   {
     username: 'alice',
+    password,
   },
   {
     username: 'bob',
+    password,
   },
   {
     username: 'charlie',
+    password,
   },
 ]
 

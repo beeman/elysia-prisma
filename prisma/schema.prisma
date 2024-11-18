@@ -23,5 +23,6 @@ model User {
   admin     Boolean  @default(false)
   avatarUrl String?
   name      String?
+  /// @prismabox.hide
   password  String?
 }

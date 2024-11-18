@@ -1,2 +1,2 @@
-export * from "./User";
-export * from "./__nullable__";
+export * from './User'
+export * from './__nullable__'

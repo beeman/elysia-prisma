@@ -1,7 +1,7 @@
 import { loginBodySchema, registerSchema } from '@api/auth/data-access'
-import { ACCESS_TOKEN_EXP, appJwt, data, REFRESH_TOKEN_EXP } from '@api/core/data-access'
-import { userFindUnique } from '@api/user/data-access'
-import { Elysia } from 'elysia'
+import { ACCESS_TOKEN_EXP, appJwt, data, REFRESH_TOKEN_EXP, User } from '@api/core/data-access'
+import { userCreate, userFindUnique } from '@api/user/data-access'
+import { Elysia, t } from 'elysia'
 import { authPlugin, createAccessRefreshToken } from '../data-access/auth-plugin'
 
 export const authFeature = new Elysia({ prefix: '/auth', tags: ['auth'] })
@@ -39,6 +39,7 @@ export const authFeature = new Elysia({ prefix: '/auth', tags: ['auth'] })
     },
     {
       body: loginBodySchema,
+      response: t.Nullable(User),
     },
   )
   .post(
@@ -46,9 +47,9 @@ export const authFeature = new Elysia({ prefix: '/auth', tags: ['auth'] })
     async ({ body }) => {
       const password = await Bun.password.hash(body.password, { algorithm: 'bcrypt', cost: 10 })
 
-      const created = await data.user.create({ data: { ...body, password } })
+      const created = await userCreate({ ...body, password })
 
-      return { ...created, password: null }
+      return { ...created, password: undefined }
     },
     {
       body: registerSchema,
@@ -61,52 +62,52 @@ export const authFeature = new Elysia({ prefix: '/auth', tags: ['auth'] })
           }
         }
       },
+      response: User,
     },
   )
-  .post('/refresh', async ({ cookie, jwt, set }) => {
-    if (!cookie.refreshToken.value) {
-      // handle error for refresh token is not available
-      set.status = 'Unauthorized'
-      throw new Error('Refresh token is missing')
-    }
-    // get refresh token from cookie
-    const jwtPayload = await jwt.verify(cookie.refreshToken.value)
-    if (!jwtPayload) {
-      // handle error for refresh token is tempted or incorrect
-      set.status = 'Forbidden'
-      throw new Error('Refresh token is invalid')
-    }
+  .post(
+    '/refresh',
+    async ({ cookie, jwt, set }) => {
+      if (!cookie.refreshToken.value) {
+        // handle error for refresh token is not available
+        set.status = 'Unauthorized'
+        throw new Error('Refresh token is missing')
+      }
+      // get refresh token from cookie
+      const jwtPayload = await jwt.verify(cookie.refreshToken.value)
+      if (!jwtPayload || !jwtPayload.sub) {
+        // handle error for refresh token is tempted or incorrect
+        set.status = 'Forbidden'
+        throw new Error('Refresh token is invalid')
+      }
 
-    // get user from refresh token
-    const userId = jwtPayload.sub
+      // verify user exists or not
+      const user = await userFindUnique(jwtPayload.sub)
 
-    // verify user exists or not
-    const user = await data.user.findUnique({
-      where: {
-        id: userId,
-      },
-    })
+      if (!user) {
+        // handle error for user not found from the provided refresh token
+        set.status = 'Forbidden'
+        throw new Error('Refresh token is invalid')
+      }
 
-    if (!user) {
-      // handle error for user not found from the provided refresh token
-      set.status = 'Forbidden'
-      throw new Error('Refresh token is invalid')
-    }
+      const [accessToken, refreshToken] = await createAccessRefreshToken({ jwt, sub: user.id })
+      cookie.accessToken.set({ httpOnly: true, maxAge: ACCESS_TOKEN_EXP, path: '/', value: accessToken })
+      cookie.refreshToken.set({ httpOnly: true, maxAge: REFRESH_TOKEN_EXP, path: '/', value: refreshToken })
 
-    const [accessToken, refreshToken] = await createAccessRefreshToken({ jwt, sub: user.id })
-    cookie.accessToken.set({ httpOnly: true, maxAge: ACCESS_TOKEN_EXP, path: '/', value: accessToken })
-    cookie.refreshToken.set({ httpOnly: true, maxAge: REFRESH_TOKEN_EXP, path: '/', value: refreshToken })
-
-    return true
-  })
+      return true
+    },
+    { response: t.Boolean() },
+  )
   .use(authPlugin)
-  .post('/logout', async ({ cookie: { accessToken, refreshToken } }) => {
-    // remove refresh token and access token from cookies
-    accessToken.remove()
-    refreshToken.remove()
-    return true
-  })
+  .post(
+    '/logout',
+    async ({ cookie: { accessToken, refreshToken } }) => {
+      // remove refresh token and access token from cookies
+      accessToken.remove()
+      refreshToken.remove()
+      return true
+    },
+    { response: t.Boolean() },
+  )
   .use(authPlugin)
-  .get('/me', ({ user }) => {
-    return user
-  })
+  .get('/me', ({ user }) => user, { response: User })
